@@ -1,0 +1,136 @@
+//
+//  CardDisplayVCViewController.m
+//  The Gathered
+//
+//  Created by Student on 2/14/13.
+//  Copyright (c) 2013 Student. All rights reserved.
+//
+
+#import "CardDisplayVCViewController.h"
+
+@interface CardDisplayVCViewController ()
+
+@end
+
+@implementation CardDisplayVCViewController
+@synthesize card, wishList;
+
+- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
+{
+    self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
+    if (self) {
+        // Custom initialization
+    }
+    return self;
+}
+
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+   
+    wishList = [NSMutableArray arrayWithArray:[[NSUserDefaults standardUserDefaults] arrayForKey:@"WishList"]];
+    [self makeImage];
+    [self fillInInfo];
+    cardNameLabel.text = [card objectForKey:@"name"];
+    [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
+    // Do any additional setup after loading the view from its nib.
+}
+
+- (void)didReceiveMemoryWarning
+{
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+-(void) fillInInfo
+{
+    NSString * type = [self stripWhiteSpace:[card objectForKey:@"type"]];
+    typeLabel.text = type;
+    NSString * pt;
+    if([type rangeOfString:@"Creature"].location == NSNotFound)
+    {
+        pt = @"P: N/A / T: N/A";
+        
+    }
+    else
+        pt = [NSString stringWithFormat:@"P: %@ / T: %@", [self stripWhiteSpace:[card objectForKey:@"power"]], [self stripWhiteSpace:[card objectForKey:@"toughness"]]];
+    NSString * ability = [NSString stringWithFormat:@"%@", [self stripWhiteSpace:[card objectForKey:@"ability"]]];
+    if(ability.length < 2)
+    {
+        NSString *ability2 = @"Ability: None";
+        abiltyLabel.text = ability2;
+    }
+    else
+    {
+        abiltyLabel.text = ability;
+    }
+    ptLabel.text = pt;
+    
+    NSString * rare = [NSString stringWithFormat:@"%@",[card objectForKey:@"rarity"]];
+    rareLabel.text = rare;
+    effectLabel.text = [NSString stringWithFormat:@"%@", [self stripWhiteSpace:[card objectForKey:@"effect"]]];
+    setLabel.text = [NSString stringWithFormat:@"#%@",[card objectForKey:@"number"]];
+    costLabel.text = [NSString stringWithFormat:@"%@",[card objectForKey:@"cost"]];
+    
+}
+-(NSString *)stripWhiteSpace: (NSString *)string
+{
+    NSString * trimmedString;
+    if([string rangeOfString:@"\n\t\t"].location != NSNotFound)
+    {
+        trimmedString = [string stringByReplacingOccurrencesOfString:@"\n\t\t" withString:@""];
+    }
+    return trimmedString;
+}
+-(void)makeImage
+{
+    NSString *imgString = [card objectForKey:@"image"];
+    NSString *trimmedString;
+    if([imgString rangeOfString:@"\n\t\n"].location == NSNotFound)
+    {
+        trimmedString = [imgString stringByReplacingOccurrencesOfString:@"\n\t\n\t" withString:@""];
+    }
+    else
+    {
+        trimmedString = [imgString stringByReplacingOccurrencesOfString:@"\n\t\n" withString:@""];
+    }
+    NSURL * picURL = [NSURL URLWithString:trimmedString];
+    NSLog(@"url: %@", picURL);
+    NSData *imageLoc = [[NSData alloc] initWithContentsOfURL:picURL];
+    UIImage *pic = [[UIImage alloc] initWithData:imageLoc];
+    UIImageView *cardImageView = [[UIImageView alloc]initWithFrame:CGRectMake(15, 55, 111, 155)];
+   // UIImage *cardImage = [self scaleImage:[UIImage imageNamed:@"image.jpg"] toSize:CGSizeMake(111, 155)];
+    cardImageView.image = pic;
+    [self.view addSubview:cardImageView];
+    NSLog(@"Made image");
+}
+/*http://stackoverflow.com/questions/6703502/how-to-resize-an-uiimage-while-maintaining-its-aspect-ratio*/
+
+- (UIImage*) scaleImage:(UIImage*)image toSize:(CGSize)newSize {
+    CGSize scaledSize = newSize;
+    float scaleFactor = 1.0;
+    if( image.size.width > image.size.height ) {
+        scaleFactor = image.size.width / image.size.height;
+        scaledSize.width = newSize.width;
+        scaledSize.height = newSize.height / scaleFactor;
+    }
+    else {
+        scaleFactor = image.size.height / image.size.width;
+        scaledSize.height = newSize.height;
+        scaledSize.width = newSize.width / scaleFactor;
+    }
+    
+    UIGraphicsBeginImageContextWithOptions( scaledSize, NO, 0.0 );
+    CGRect scaledImageRect = CGRectMake( 0.0, 0.0, scaledSize.width, scaledSize.height );
+    [image drawInRect:scaledImageRect];
+    UIImage* scaledImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
+    return scaledImage;
+}
+-(void)addToWishList:(id)sender
+{
+    [wishList addObject:[NSString stringWithFormat:@"%@", [self stripWhiteSpace:[card objectForKey:@"name"]]]];
+    [[NSUserDefaults standardUserDefaults] setObject:wishList forKey:@"WishList"];
+}
+
+@end
