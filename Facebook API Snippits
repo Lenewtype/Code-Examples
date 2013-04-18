@@ -1,0 +1,52 @@
+var friendsArray = new Array();
+var statusCollection= new Array();
+
+function getStatuses(infoID)
+  {
+		
+		FB.api('/me?fields=statuses', function(response)
+		{
+			
+			var s = response.statuses.data;
+      //console.log(s);
+      //console.log(response.statuses.data);
+      var test = 0;
+			for(x in s)
+			{
+          statusCollection[test] = s[test].message;
+          test++;
+			}
+			$.ajax({
+           type: "POST",
+           url: "includes/store_user_data.php",
+           data: {theData : statusCollection, theID : infoID, statuses: "true"},
+           success: function(msg){
+             var url = 'portal.php?id=' + msg;
+             window.location.href = url;
+           }
+        });
+
+			place = 0;
+		});
+	}
+
+function getFriends()
+  {
+		FB.api('/me/friends?fields=installed', function(response)
+		      {
+			var test = new Array();
+			var j = 0;
+			for(var i=0; i < response.data.length; i++)
+			{
+				if(response.data[i].installed == true)
+				{
+					testUsersId[j] = response.data[i].id;
+					j++;
+				}
+			}
+			//console.log(testUsersId);
+      friendsArray = testUsersId;
+		});
+		
+	}
+
