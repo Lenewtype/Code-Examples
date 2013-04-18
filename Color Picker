@@ -1,0 +1,294 @@
+/**
+ *
+ * HTML5 Color Picker
+ *
+ * Licensed under the MIT license.
+ * http://www.opensource.org/licenses/mit-license.php
+ * 
+ * Copyright 2012, Script Tutorials
+ * http://www.script-tutorials.com/
+ */
+    
+
+
+var canvas = '';
+var ctx = '';
+var image = '';
+var currentColor = '#ffffff';
+var chosenColor = '#ffffff';
+var oldChange = 0.0;
+var bCanPreview = false;
+var colorChange = 0;
+var mouseDown = false;
+function makePicker(alph, start)
+{
+  
+	
+    if(start != true)
+    {
+        /*alph *= 0.5; //slider ranges from 0~200, so we need half the value
+        alph = 100+alph; //The lower the slider, the darker the picker. It works backwards mathematically 
+        //Top = 0, thus making it black. We want it to have an alpha of 1, however. So, 100-alpha value passed in
+        //yields 100: full brightness. At a value of 100, it would be 100-100 = 0, full darkness. 
+        alph *= 0.01; //alpha works as a value between 0~1, so we need a 10th of the value;*/
+    }
+    else{
+        alph = alph;
+        //if making picker from onload of the document, the opacity needs to be full
+        }
+     
+
+    // create canvas and context objects
+    //<canvas id="picker" var="5" width="550" height="600"></canvas>
+
+    if(document.getElementById('picker')) //remove the picker if it exists
+    {
+        var bgimage = document.getElementById('biamge');
+		bgimage.parentNode.removeChild(bgimage);
+        var tempCanvas = document.getElementsByClassName('colorpicker')[0];
+        tempCanvas.parentNode.removeChild(tempCanvas);
+        var pre = document.getElementsByClassName('preview')[0];
+        pre.parentNode.removeChild(pre);
+        var cent = document.getElementById('center');
+        cent.parentNode.removeChild(cent);
+
+
+    }
+    //recreate / create picker with dom maniuplation 
+    //Alpha of a canvas cannot be changed without doing so
+     var curve = document.getElementById('curveColored');
+    var background = document.createElement('div');
+    background.setAttribute('id', 'biamge');
+    var tempholder = document.createElement('div');
+    tempholder.setAttribute('class', 'colorpicker');
+    var tempCanvas = document.createElement('canvas');
+        tempCanvas.setAttribute('id', 'picker');
+        tempCanvas.setAttribute('var', '5');
+        tempCanvas.setAttribute('width', '395');
+        tempCanvas.setAttribute('height', '395');
+        document.getElementsByClassName('container')[0].appendChild(background);
+        document.getElementsByClassName('container')[0].appendChild(tempholder);
+        document.getElementsByClassName('colorpicker')[0].appendChild(tempCanvas);
+     canvas = document.getElementById('picker');
+     ctx = canvas.getContext('2d');
+
+    
+   
+    // drawing active image
+    
+
+     
+    image = new Image();
+    var imageSrc = 'images/colorwheel62.png';
+    
+    image.src = imageSrc;
+    image.onload = function () 
+	{
+        ctx.drawImage(image, -0, 0); // draw the image on the canvas
+    }
+
+    // select desired colorwheel
+    
+    //bind touch events so you can pick a color on a phone
+	$('#picker').bind('touchstart', function(e){
+     var canvasOffset = $(canvas).offset();
+            var canvasX = Math.floor(e.originalEvent.touches[0].pageX - canvasOffset.left);
+            var canvasY = Math.floor(e.originalEvent.touches[0].pageY - canvasOffset.top);
+            // get current pixel
+            var imageData = ctx.getImageData(canvasX, canvasY, 0.25, 0.25);
+            var pixel = imageData.data;
+
+            // update preview color
+            var pixelColor = "rgb("+pixel[0]+", "+pixel[1]+", "+pixel[2]+")";
+            pixelColor = rgb2hex(pixelColor);
+            pixelColor = increase_brightness(pixelColor, colorChange);
+            chosenColor = pixelColor;
+            $('.preview').css('backgroundColor', pixelColor);
+            var curve = document.getElementById('curveColored');
+            curve.setAttribute('fill', chosenColor);
+
+    });
+    //repeated for continues sampling
+    $('#picker').bind('touchmove', function(e){
+
+        var canvasOffset = $(canvas).offset();
+            var canvasX = Math.floor(e.originalEvent.touches[0].pageX - canvasOffset.left);
+            var canvasY = Math.floor(e.originalEvent.touches[0].pageY - canvasOffset.top);
+            // get current pixel
+            var imageData = ctx.getImageData(canvasX, canvasY, 1, 1);
+            var pixel = imageData.data;
+
+            // update preview color
+            var pixelColor = "rgb("+pixel[0]+", "+pixel[1]+", "+pixel[2]+")";
+            pixelColor = rgb2hex(pixelColor);
+            pixelColor = increase_brightness(pixelColor, colorChange);
+            chosenColor = pixelColor;
+            $('.preview').css('backgroundColor', pixelColor);
+            var curve = document.getElementById('curveColored');
+            curve.setAttribute('fill', chosenColor);
+    });
+    $('#picker').bind('touchend', function(e){
+        bCanPreview = false;
+    });
+    //checks to see if the mouse button is down to continuously sample color
+    $('#picker').mousedown(function(event){
+        mouseDown = true;
+        bCanPreview = true;
+    });
+    $('#picker').mouseup(function(event){
+        mouseDown = false;
+        bCanPreview = false;
+    });
+    $('#picker').mousedown(function(e){
+        $('#picker').css('cursor', 'crosshair');
+        if (bCanPreview) {
+            // get coordinates of current position
+            
+            var canvasOffset = $(canvas).offset();
+            var canvasX = Math.floor(e.pageX - canvasOffset.left);
+            var canvasY = Math.floor(e.pageY - canvasOffset.top);
+            // get current pixel
+            var imageData = ctx.getImageData(canvasX, canvasY, 1, 1);
+            console.log(e.pageX);
+            console.log(canvasX);
+            console.log(canvasOffset);
+            var pixel = imageData.data;
+
+            // update preview color
+            var pixelColor = "rgb("+pixel[0]+", "+pixel[1]+", "+pixel[2]+")";
+            pixelColor = rgb2hex(pixelColor);
+            pixelColor = increase_brightness(pixelColor, colorChange);
+            chosenColor = pixelColor;
+            $('.preview').css('backgroundColor', pixelColor);
+             var curve = document.getElementById('curveColored');
+            curve.setAttribute('fill', chosenColor);
+            }
+    });
+    $('#picker').mousemove(function(e) { // mouse move handler
+        $('#picker').css('cursor', 'crosshair');
+        if(mouseDown == true)
+        {
+            if (bCanPreview) {
+            // get coordinates of current position
+            
+            var canvasOffset = $(canvas).offset();
+            var canvasX = Math.floor(e.pageX - canvasOffset.left);
+            var canvasY = Math.floor(e.pageY - canvasOffset.top);
+            // get current pixel
+            var imageData = ctx.getImageData(canvasX, canvasY, 1, 1);
+            var pixel = imageData.data;
+
+            // update preview color
+            var pixelColor = "rgb("+pixel[0]+", "+pixel[1]+", "+pixel[2]+")";
+            pixelColor = rgb2hex(pixelColor);
+            pixelColor = increase_brightness(pixelColor, colorChange);
+            chosenColor = pixelColor;
+            $('.preview').css('backgroundColor', pixelColor);
+             var curve = document.getElementById('curveColored');
+            curve.setAttribute('fill', chosenColor);
+            }
+        }
+        else
+        {
+            //nothing
+        }
+    
+    });
+    ctx.globalAlpha= alph;
+    //recreate the color picker using the alpha passed in the from the slider
+    var centerImage = document.createElement('div');
+    centerImage.setAttribute('id', 'center');
+    var pre = document.createElement('div');
+    pre.setAttribute('class', 'preview');
+    pre.setAttribute('onclick', 'getCurrentColor();');
+    document.getElementsByClassName('container')[0].appendChild(centerImage);
+    document.getElementsByClassName('container')[0].appendChild(pre);
+    $('.preview').css('backgroundColor', currentColor); //center image's color is set to current color
+     
+}
+
+function isDown() //checks to see if mouse button is down
+{
+    if(!mouseDown)
+    {
+        return;
+    }
+    if(mouseDown)
+    {
+        setInterval(100, "isDown()"); //repeat every tenth of a second until false
+    }
+}    
+function touch_start(event)
+{
+    bCanPreview = true;
+}
+function touch_move(event)
+{
+
+    var canvasOffset = $(canvas).offset();
+    var canvasX = Math.floor(event.pageX - canvasOffset.left);
+    var canvasY = Math.floor(event.pageY - canvasOffset.top);
+
+            // get current pixel
+            var imageData = ctx.getImageData(canvasX, canvasY, 1, 1);
+            var pixel = imageData.data;
+
+            // update preview color
+            var pixelColor = "rgb("+pixel[0]+", "+pixel[1]+", "+pixel[2]+")";
+            pixelColor = rgb2hex(pixelColor);
+            pixelColor = increase_brightness(pixelColor, colorChange);
+            chosenColor = pixelColor;
+            $('.preview').css('backgroundColor', pixelColor);
+            var curve = document.getElementById('curveColored');
+            curve.setAttribute('fill', chosenColor);
+}
+function touch_end(event)
+{
+    bCanPreview = false;
+}
+function increase_brightness(hex, percent){
+                //source stackoverflow.com/questions/5560248/programmatically-lighten-or-darken-a-hex-color
+                
+       var num = parseInt(hex.slice(1),16), amt = Math.round(2.55 * percent), R = (num >> 16) + amt, B = (num >> 8 & 0x00FF) + amt, G = (num & 0x0000FF) + amt;
+    return "#" + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 + (B<255?B<1?0:B:255)*0x100 + (G<255?G<1?0:G:255)).toString(16).slice(1);
+}
+function setPercent(what)
+        {
+
+           colorChange = 0.5*what;
+          // document.getElementById('percentHolder').innerHTML=colorChange+"%";
+          // getCurrentColor();
+          currentColor= increase_brightness(chosenColor, colorChange);
+          showHex();
+        }
+        function getCurrentColor()
+        {
+            currentColor= rgb2hex($('.preview').css('backgroundColor'));
+            chosenColor = currentColor;
+            //currentColor = increase_brightness(currentColor, colorChange);
+            showHex();
+
+            
+        }
+
+//Old code for testing the returned hex codes.
+		function showHex()
+            {
+                //var color = rgb2hex(document.getElementsByClassName('preview')[0].style.backgroundColor);
+                //var darkColr = rgb2hex(document.getElementsByClassName('preview')[0].style.backgroundColor);
+                /*document.getElementById('hex').innerHTML=chosenColor;
+                document.getElementById('hex').style.color=chosenColor;
+                document.getElementById('hex2').innerHTML=currentColor;*/
+                document.getElementsByClassName('preview')[0].style.backgroundColor = currentColor;
+                
+                
+            }
+            //convert from rgb to hexadecimal 
+            function rgb2hex(rgb){
+                rgb = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+                return "#" +
+                ("0" + parseInt(rgb[1],10).toString(16)).slice(-2) +
+                ("0" + parseInt(rgb[2],10).toString(16)).slice(-2) +
+                ("0" + parseInt(rgb[3],10).toString(16)).slice(-2);
+                //Source: http://www.jquery4u.com/jquery-functions/jquery-convert-rgb-hex-color/
+            }
