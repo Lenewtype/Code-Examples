@@ -1,0 +1,119 @@
+<?php
+$mysql = mysql_connect($dbhost, $dbuser, $dbpass);
+mysql_select_db($dbname, $mysql);
+
+
+$statuses = array(); //associative array with status and timestamps in it
+
+if ( (isset($_POST['userID'])) && (isset($_POST['timestamp'])) )
+{
+   
+    $theID = $_POST['userID'];
+
+    $interval = $_POST['delimiter'];
+
+    if ($interval == 6)
+    {
+        $theInterval = "AND timestamp BETWEEN SUBDATE(CURDATE(), INTERVAL 1 YEAR) AND NOW()";
+    }
+    else if ($interval == 5)
+    {
+        $theInterval = "AND timestamp BETWEEN SUBDATE(CURDATE(), INTERVAL 1 DAY) AND NOW()";
+    }
+    else if ($interval == 4)
+    {
+        $theInterval = "AND timestamp BETWEEN SUBDATE(CURDATE(), INTERVAL 7 DAY) AND NOW()";
+    }
+    else if ($interval == 3)
+    {
+        $theInterval = "AND timestamp BETWEEN SUBDATE(CURDATE(), INTERVAL 1 MONTH) AND NOW()";
+    }
+    else if ($interval == 2)
+    {
+        $theInterval = "AND timestamp BETWEEN SUBDATE(CURDATE(), INTERVAL 1 YEAR) AND NOW()";
+    }
+    else if ($interval == 0)
+    {
+        $theInterval = "AND timestamp BETWEEN SUBDATE(CURDATE(), INTERVAL 100 YEAR) AND NOW()";
+    }
+    //echo $theID;
+    $fb = getFBStatuses($theID, $theInterval, 'facebook');
+    sortItems($statuses, array('time'=> $_POST['timestamp'], 'hex' => $_POST['hex']));
+    //var_dump($sortItems);
+}
+
+function getFBStatuses($userID, $delimiter, $service)
+{
+//user id number, the latest time to pull from (today, last week, last month), from twitter or facebook
+  $statusArray = array();
+	$tweetArray = array();
+	$statusTimes = array();
+		
+	//$query = "SELECT `status`, `timestamp` FROM $service WHERE `id` = $userID AND `timestamp` > '$delimiter'"; //query to pull statuses from facebook table
+	$query = "SELECT `status`, `timestamp` FROM $service WHERE `id` = $userID AND `timestamp` $delimiter";
+	//echo $query;
+	$results = mysql_query($query);
+	 //return the results as an array
+	if(!$results)
+	{
+		echo "Error pulling facebook statuses!"; //if there was an error or couldn't find statuses
+	}
+	else
+	{
+		$results_array = array();
+		while($row = mysql_fetch_assoc($results))
+		{
+			array_push($results_array, $row); //add the results to an array
+		}
+		if($service == 'facebook')
+		{
+			global $statuses;
+			$statuses = $results_array; //save results in attribute 
+			$statuses['key'] = 'facebook'; //mark if it is a facebook or twitter status by adding a key
+			//should look like:
+			// $statuses[0] = {['status']="xxxxxxx", ['timestamp']="1/1/13 00:00:00", ['key'] = "facebook"};
+		}
+		else
+		{
+			global $tweets;
+			$tweets = $results_array;
+			$tweets['key'] = 'twitter';
+			//should look like:
+			// $statuses[0] = {['status']="xxxxxxx", ['timestamp']="1/1/13 00:00:00", ['key'] = "twitter"};
+		}
+	}
+}
+
+
+function sortItems($fb, $color)
+{
+	//takes in an array of statuses, and an associative array of 1 (one) color. 
+	// $fb [0] = {['status'] = 'xxxxx'. ['timestamp'] = '1/1/13 00:00:00', ['key']= 'facebook'}
+	//$color = {['hex']= '#00ff00', ['timestamp']= '1/1/13 12:00:30'}
+
+	$colorTime = strtotime($color['time']);
+	$hasStatus = false;
+	
+
+	for($i =0; $i< count($fb); $i++) //go through each status passed in
+	{
+		$statusTime = strtotime($fb[$i]['timestamp']);
+		//var_dump($fb);
+		//var_dump($color);
+		//echo "$i: ".($statusTime-$colorTime) . " ";
+		if($statusTime > ($colorTime - 10800) || $statusTime < ($colorTime +10800)) //if status in question is within 3 hours in either direction of color's time
+		{
+			//echo "<p>". $fb[$i]['status'].", <strong>[".$fb[$i]['timestamp']."]</strong></p>"; //echo out status and time (demo only)
+			echo "<li class='clearfix'><i class='icon-moon-facebook img'></i><p>". $fb[$i]['status']."</p><footer class='mod-foot'><span>".$fb[$i]['timestamp']."</footer></li>";
+			$hasStatus = true; //it has a status
+		}
+		else
+		{
+			//do nothing
+		}
+	}
+	if($hasStatus == false)
+		echo "<p>No status or tweet associated with this color.</p>" . "to time ". $colorTime . " ". $color['time'];	//demo only: show color anyway
+						//var_dump($matchedArray);
+						//var_dump($fb);
+}?>
