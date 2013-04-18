@@ -24,10 +24,8 @@ function getStatuses(infoID)
              var url = 'portal.php?id=' + msg;
              window.location.href = url;
            }
-        });
-
-			place = 0;
-		});
+       	 });
+	});
 	}
 
 function getFriends()
