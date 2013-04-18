@@ -1,0 +1,178 @@
+$(document).ready(function() {
+  /*Slider */
+	$('.slider-input').each(function() {
+		  var currVal = $(this).val();
+		  if(currVal < 0){
+			  currVal = 0;
+		  }
+		$(this).parent().children('.slider-content').slider({
+			'animate': true, 
+			'min': -200, 
+			'max': 1,
+			'value' : 1,
+			'orientation' : 'vertical',
+			'stop': function(e, ui){
+				//$(this).prev('.slider-input').val(ui.value); //Set actual input field val, done during slide instead
+				
+				//pop handle back to top if we went out of bounds at bottom
+				
+				if ( ui.value == -1 ) {
+					ui.value = 201;
+					$(this).children('.ui-slider-handle').css('bottom','100%');
+				}
+				
+			},
+			'slide': function(e, ui){
+				var percentLeft;
+				var submitValue;
+				var Y = ui.value +  98; //Find center of Circle (We're using a max value and height of 200)
+				var R = 98; //Circle's radius
+				var skip = false;
+				
+				$(this).children('.ui-slider-handle').attr('href',' UI.val = ' + ui.value);
+				
+				//Show default/disabled/out of bounds state
+				if ( ui.value < 0 && ui.value > -201 ) { //if in the valid slide rang
+					$(this).children('.ui-slider-handle').addClass('is-active');
+				}
+				else {
+					$(this).children('.ui-slider-handle').removeClass('is-active');
+				}
+				
+				//Calculate slider's path on circle, put it there, by setting background-position
+				if ( ui.value <= 0 && ui.value >= -200 ) { //if in valid range, these are one inside the min and max
+					var X = (Math.sqrt((R*R) - (Y*Y))); //X^2 + Y^2 = R^2. Find X.
+					if ( X == 'NaN' ) {
+						percentLeft = 0;
+					}
+					else {
+						
+//-------------------------------------************************************---------------------------------------------------------------
+						/*percentLeft is how far into the div the slider is kept in the anchor moves
+						percentLeft of 50 means that the anchor will be in the middle of the box, 100 means
+						it is all the way to the right, and so on.
+
+						X is the value gotten from the equation used to find the path of the semi-circle.
+						The tutorial used its value to determine how far over the anchor should move. Unfortunately,
+						our path isn't a perfect semi-circle.
+
+						So there are two gotchas: the first is that it may look perfect on the top half of the slider,
+						but it might not be the same on the bottom. To get around this, you have to also check for the ui.value
+						in your conditionals. The slider goes from -200~0 . -100 would be the middle, -200 is the bottom, and 0 is the top.
+						Basically, you have to add to or subtract from X in order to make it fit to the curve more accurately AND check to see
+						if it is on the top half or bottom half of the curve so it looks uniform the whole way through. The else if statement
+						is an example of how you would go about checking for both (but I don't believe it is accurate). 
+						
+						Try playing it with the ifs and elses commented out so you can see how it behaves without and adjustments, then go about it in chunks.
+						You can do this either by ifs and elses or you can do a switch statement if you'd like...or find an equation that does it all for you.
+						Whatever makes you happy! The best way to check value intervals is by console.logging both X and ui.value at the same time.
+						*/
+
+						/*	
+						if(X > 85 && X < 92)
+						{
+
+							percentLeft = X-15;
+						}
+						
+						
+						if(X>96 && X<= 100)
+						{
+							if(ui.value < -129)
+							{
+								percentLeft = X+6;
+							}
+							else
+								percentLeft = X-6;
+						}
+						
+						
+						
+						//This part here, withouth the else, was how it originally was made. I added the if
+						//statements with different values to try and fit the look of the curve more. Without
+						//any tampering, it does work, it just doesn't look right.
+						
+						else
+						{
+							percentLeft = X;
+						}
+
+
+						percentLeft = X;
+		*/
+					if(X > 85 && X < 92)
+						{
+
+							percentLeft = X-12;
+						}
+						
+						
+						if(X>96 && X<= 100)
+						{
+							if(ui.value < -129)
+							{
+								percentLeft = X+26;
+							}
+							else
+								percentLeft = X-26;
+						}
+						if(X >= 80 && X < 85)
+						{
+							percentLeft = X-10;
+						}
+						if(X < 80 && X > 5)
+						{
+
+							percentLeft = X-10;
+						}
+						else
+						{
+							percentLeft = X;
+						}
+						
+						
+						
+						
+//------------------------------------*******************************----------------------------------	
+					}
+				}
+				
+				
+				else if ( ui.value == 1 || ui.value == -201 ) {
+					percentLeft = 0;
+					skip = true;
+				}
+				
+				else {
+					percentLeft = 0;
+				}
+				
+				//Move handle
+				if ( percentLeft > 100 ) { percentLeft = 100; } 
+				$(this).children('.ui-slider-handle').css('background-position',percentLeft +'% 100%'); //set css sprite
+
+				//Figure out and set input value
+				if ( skip == true ) {
+					$(this).children('.ui-slider-handle').css('background-position',percentLeft +'% 0%'); //reset css sprite					
+				}
+				else {
+					submitValue = Math.round(ui.value / 2); //Clamp input value to range 0 - 100
+				}			
+				$(this).prev('.slider-input').val(ui.value); //Set actual input field val. jQuery UI hid it for us, but it will be submitted.
+				setPercent(ui.value);
+			},/*
+			I've left this commented out because you don't need to worry about changing the color picker at all, and it will
+			get kind of clunky if you're constantly having it update.*/
+			'stop': function(e, ui)
+			{
+			
+			var changeValue = 0.01*(100-(ui.value*-0.5)); //Need to change the input value to a decimal for
+			//changing the alpha of the color picker  canvas. Easier to do it as a variable for readability
+			makePicker( changeValue, false);//pass in the percent darkness to change the color picker accordingly, and that it isn't the
+			//first time making the color picker
+			}
+		});
+	});
+	
+	
+});	
